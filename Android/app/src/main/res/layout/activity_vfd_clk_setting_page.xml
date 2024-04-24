@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8sp"
+    tools:context=".VfdClkSettingPage">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_wifi_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_row="0"
+        android:layout_rowWeight="1"
+        android:layout_column="0"
+        android:layout_columnWeight="1"
+        android:maxLines="1"
+        android:paddingVertical="8sp"
+        android:text="@string/wifi_info"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/et_wifi_ssid"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:digits="&#32;&#33;&#34;&#35;&#36;&#37;&#38;&#39;&#40;&#41;&#42;&#43;&#44;&#45;&#46;&#47;&#48;&#49;&#50;&#51;&#52;&#53;&#54;&#55;&#56;&#57;&#58;&#59;&#60;&#61;&#62;&#63;&#64;&#65;&#66;&#67;&#68;&#69;&#70;&#71;&#72;&#73;&#74;&#75;&#76;&#77;&#78;&#79;&#80;&#81;&#82;&#83;&#84;&#85;&#86;&#87;&#88;&#89;&#90;&#91;&#92;&#93;&#94;&#95;&#96;&#97;&#98;&#99;&#100;&#101;&#102;&#103;&#104;&#105;&#106;&#107;&#108;&#109;&#110;&#111;&#112;&#113;&#114;&#115;&#116;&#117;&#118;&#119;&#120;&#121;&#122;&#123;&#124;&#125;&#126;&#127;"
+        android:hint="@string/wifi_ssid"
+        android:inputType="text"
+        android:maxLength="32"
+        android:maxLines="1"
+        android:textColor="?attr/colorSecondary"
+        android:textColorHint="?attr/colorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_wifi_info"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/et_wifi_password"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:digits="&#32;&#33;&#34;&#35;&#36;&#37;&#38;&#39;&#40;&#41;&#42;&#43;&#44;&#45;&#46;&#47;&#48;&#49;&#50;&#51;&#52;&#53;&#54;&#55;&#56;&#57;&#58;&#59;&#60;&#61;&#62;&#63;&#64;&#65;&#66;&#67;&#68;&#69;&#70;&#71;&#72;&#73;&#74;&#75;&#76;&#77;&#78;&#79;&#80;&#81;&#82;&#83;&#84;&#85;&#86;&#87;&#88;&#89;&#90;&#91;&#92;&#93;&#94;&#95;&#96;&#97;&#98;&#99;&#100;&#101;&#102;&#103;&#104;&#105;&#106;&#107;&#108;&#109;&#110;&#111;&#112;&#113;&#114;&#115;&#116;&#117;&#118;&#119;&#120;&#121;&#122;&#123;&#124;&#125;&#126;&#127;"
+        android:hint="@string/wifi_password"
+        android:inputType="textVisiblePassword"
+        android:maxLength="64"
+        android:textColor="?attr/colorSecondary"
+        android:textColorHint="?attr/colorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/et_wifi_ssid"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_clock_control"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="8sp"
+        android:text="@string/clock_control"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/et_wifi_password"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/sw_timing_switch_screen"
+        android:layout_width="match_parent"
+        android:layout_height="30sp"
+        android:text="@string/timing_switch_screen"
+        android:textColor="?attr/colorSecondary"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_clock_control"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/et_on_screen_dmin"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:focusable="false"
+        android:hint="@string/display_on_time"
+        android:longClickable="false"
+        android:maxLength="5"
+        android:textColor="?attr/colorSecondary"
+        android:textColorHint="?attr/colorSecondary"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/et_off_screen_dmin"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sw_timing_switch_screen"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/et_off_screen_dmin"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:focusable="false"
+        android:hint="@string/display_off_time"
+        android:longClickable="false"
+        android:textColor="?attr/colorSecondary"
+        android:textColorHint="?attr/colorSecondary"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="@+id/et_on_screen_dmin"
+        app:layout_constraintTop_toBottomOf="@+id/sw_timing_switch_screen" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/sw_hour_prompt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/hour_prompt"
+        android:textColor="?attr/colorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/et_off_screen_dmin"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_display_control"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="8sp"
+        android:text="@string/display_control"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sw_hour_prompt"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/sw_auto_brightness"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/auto_brightness"
+        android:textColor="?attr/colorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_display_control"
+        app:layout_constraintVertical_bias="0" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/et_screen_brightness"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:focusable="false"
+        android:hint="@string/screen_brightness"
+        android:longClickable="false"
+        android:textColor="?attr/colorSecondary"
+        android:textColorHint="?attr/colorSecondary"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_weight="2.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sw_auto_brightness" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_save"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:text="@string/save"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

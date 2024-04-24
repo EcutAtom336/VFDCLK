@@ -1,0 +1,15 @@
+{
+    "myClock": {
+        "onSCRNDmin": 360,
+        "offSCRNDmin": 0,
+        "hourlyChime": false
+    },
+    "myWifi": {
+        "ssid": "DESKTOP-12",
+        "password": "Z192418.",
+        "needAuth": false
+    },
+    "myVfd": {
+        "brightness": 8
+    }
+}

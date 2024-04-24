@@ -1,0 +1,9 @@
+idf_component_register(
+SRCS
+"my_event_group.c"
+""
+INCLUDE_DIRS
+"."
+PRIV_REQUIRES
+REQUIRES
+)

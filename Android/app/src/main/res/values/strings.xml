@@ -1,0 +1,57 @@
+<resources>
+
+    <string name="title_activity_settings">SettingsActivity</string>
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="app_name">VFD时钟设置</string>
+    <string name="scan_device">扫描设备</string>
+    <string name="open_bt">打开蓝牙</string>
+    <string name="input_disposable_device_code">请输入一次性设备码</string>
+    <string name="connect_device">连接设备</string>
+    <string name="num_zero">0</string>
+    <string name="num_one">1</string>
+    <string name="num_two">2</string>
+    <string name="num_three">3</string>
+    <string name="num_four">4</string>
+    <string name="num_five">5</string>
+    <string name="num_six">6</string>
+    <string name="num_seven">7</string>
+    <string name="num_eight">8</string>
+    <string name="num_nine">9</string>
+    <string name="brief_mon">一</string>
+    <string name="brief_tues">二</string>
+    <string name="brief_wed">三</string>
+    <string name="brief_thur">四</string>
+    <string name="brief_fri">五</string>
+    <string name="brief_sat">六</string>
+    <string name="brief_sun">日</string>
+    <string name="wifi_info">wifi 信息</string>
+    <string name="wifi_ssid">WIFI SSID</string>
+    <string name="wifi_password">WIFI 密码</string>
+    <string name="clock_control">时钟控制</string>
+    <string name="timing_switch_screen">定时开关屏幕</string>
+    <string name="display_on_time">开启时间</string>
+    <string name="display_off_time">关闭时间</string>
+    <string name="screen_brightness">屏幕亮度</string>
+    <string name="alarm_setting">闹钟设置</string>
+    <string name="alarm">闹钟</string>
+    <string name="alarm_time">闹钟时间</string>
+    <string name="alarm_repeat">重复:</string>
+    <string name="click_to_set">点击设置</string>
+    <string name="time_separator_blibk">时间分隔符闪烁</string>
+    <string name="hour_prompt">整点提示</string>
+    <string name="display_control">显示控制</string>
+    <string name="auto_brightness">自动亮度</string>
+    <string name="save">保存</string>
+    <string name="hour_minute">%02d:%02d</string>
+</resources>

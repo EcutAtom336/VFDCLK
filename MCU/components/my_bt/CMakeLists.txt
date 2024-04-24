@@ -1,0 +1,14 @@
+idf_component_register(
+SRCS
+"ble_common.c"
+"ble_ut.c"
+"my_bt.c"
+""
+INCLUDE_DIRS
+"."
+PRIV_REQUIRES
+VFD_8_MD_06INKM
+my_event_group
+REQUIRES
+bt
+)

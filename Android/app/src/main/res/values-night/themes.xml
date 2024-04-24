@@ -1,0 +1,7 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="Theme.VFD时钟设置" parent="Theme.Material3.DynamicColors.Dark">
+<!--        <item name="colorPrimary">@color/colorPrimary</item>-->
+<!--        <item name="colorAccent">@color/colorAccent</item>-->
+    </style>
+</resources>

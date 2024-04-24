@@ -1,0 +1,11 @@
+idf_component_register(
+SRCS
+"my_buzzer.c"
+""
+INCLUDE_DIRS
+"."
+PRIV_REQUIRES
+driver
+my_event_group
+REQUIRES
+)
