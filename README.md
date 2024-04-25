@@ -1,4 +1,4 @@
- # VFD 时钟
+ # [VFD 时钟](https://github.com/EcutAtom336/VFDCLK/tree/master)
  该项目是一个基于 ESP32 C3 微控制器的 VFD 时钟，可通过 Android 端软件进行配置
 
  ## 特性
