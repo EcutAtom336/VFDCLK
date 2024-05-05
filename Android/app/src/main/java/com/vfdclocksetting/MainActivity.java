@@ -213,9 +213,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 ScanSettings.Builder scanSettingBuilder = new ScanSettings.Builder();
                 scanSettingBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).setNumOfMatches(MATCH_NUM_ONE_ADVERTISEMENT);
 
-                ScanSettings scanSetting = scanSettingBuilder.build();
                 alertDialogConnect.show();
-                leScanner.startScan(scanFilters, scanSetting, new BleScanCallback());
+                leScanner.startScan(scanFilters, scanSettingBuilder.build(),
+                        new BleScanCallback());
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {

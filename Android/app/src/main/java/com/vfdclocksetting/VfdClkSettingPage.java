@@ -178,7 +178,7 @@ public final class VfdClkSettingPage extends AppCompatActivity implements View.O
             MaterialTimePicker materialTimePicker =
                     materialTimePickerBuilder.setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK).setTitleText("设置屏幕关闭时间").setTimeFormat(TimeFormat.CLOCK_24H).build();
             materialTimePicker.addOnPositiveButtonClickListener(v1 -> {
-                etOffScreenDmin.setText(String.format(String.valueOf(R.string.hour_minute),
+                etOffScreenDmin.setText(String.format(getString(R.string.hour_minute),
                         materialTimePicker.getHour(),
                         materialTimePicker.getMinute()));
             });
