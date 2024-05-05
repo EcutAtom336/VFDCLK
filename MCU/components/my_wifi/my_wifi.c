@@ -1,7 +1,6 @@
 #include "my_wifi.h"
 //
-#include "common.h"
-#include "my_event_group.h"
+#include "my_common.h"
 //
 #include "cJSON.h"
 #include "esp_err.h"
@@ -11,7 +10,6 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
 //

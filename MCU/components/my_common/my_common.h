@@ -1,5 +1,5 @@
-#ifndef _COMMON_H_
-#define _COMMON_H_
+#ifndef _MY_COMMON_H_
+#define _MY_COMMON_H_
 
 #define MODEL_CODE (uint16_t)0
 #define HARDWARE_VERSION_CODE (uint16_t)1

@@ -24,11 +24,15 @@ extern esp_event_loop_handle_t ble_ut_event_loop_handle;
 
 void ble_ut_init();
 
+void ble_ut_deinit();
+
 void ble_ut_gatts_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                           esp_ble_gatts_cb_param_t *param);
 
 void ble_ut_send_to_client(void *p_data, uint32_t size);
 
 void ble_ut_set_to_server_handler(BleUtToServerHandler_t cb);
+
+void ble_ut_delete_to_server_handler();
 
 #endif

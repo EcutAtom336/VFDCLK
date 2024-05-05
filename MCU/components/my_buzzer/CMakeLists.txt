@@ -6,6 +6,6 @@ INCLUDE_DIRS
 "."
 PRIV_REQUIRES
 driver
-my_event_group
+
 REQUIRES
 )

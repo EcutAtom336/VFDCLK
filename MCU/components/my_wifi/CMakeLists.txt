@@ -5,9 +5,8 @@ SRCS
 INCLUDE_DIRS
 "."
 PRIV_REQUIRES
-my_event_group
 my_setting
-common
+my_common
 
 esp_wifi
 nvs_flash

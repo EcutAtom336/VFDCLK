@@ -5,13 +5,12 @@ SRCS
 INCLUDE_DIRS
 "."
 PRIV_REQUIRES
-
-my_event_group
 my_bt
 my_clock
 my_wifi
 VFD_8_MD_06INKM
-common
+my_common
+life_cycle_manage
 
 esp_hw_support
 json

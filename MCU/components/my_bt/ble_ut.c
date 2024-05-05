@@ -2,7 +2,6 @@
 //
 #include "ble_common.h"
 //
-// #include "esp_gatt_defs.h"
 #include "esp_event.h"
 #include "esp_gatts_api.h"
 #include "esp_log.h"
@@ -151,12 +150,16 @@ void ble_ut_gatts_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     if (param->reg.status == ESP_GATT_OK) {
       ESP_LOGI(TAG, "ESP_GATTS_REG_EVT success");
       if (param->reg.app_id == kBleAppIdUt) {
-        ESP_ERROR_CHECK(esp_ble_gatts_create_attr_tab(ble_ut_gatts_attr_db,
-                                                      gatts_if, 6, 0));
+        ESP_ERROR_CHECK(esp_ble_gatts_create_attr_tab(
+            ble_ut_gatts_attr_db, gatts_if, kBleUtAttrMax, 0));
       }
     } else {
       ESP_LOGE(TAG, "ESP_GATTS_REG_EVT fail, code: %u", param->reg.status);
     }
+    break;
+
+  case ESP_GATTS_UNREG_EVT:
+    ESP_LOGI(TAG, "ESP_GATTS_UNREG_EVT");
     break;
 
   case ESP_GATTS_CREAT_ATTR_TAB_EVT:
@@ -301,12 +304,12 @@ void ble_ut_to_server_handler_task() {
 void ble_ut_init() {
   ble_ut_queue_handle.to_client_tight = xQueueCreate(8, sizeof(BleUtPkgInfo_t));
   if (ble_ut_queue_handle.to_client_tight == NULL) {
-    ESP_LOGE(TAG, "ble ut tx queue init fail, reboot...");
+    ESP_LOGE(TAG, "create tx queue fail, reboot...");
     esp_restart();
   }
   ble_ut_queue_handle.to_server_tight = xQueueCreate(8, sizeof(BleUtPkgInfo_t));
   if (ble_ut_queue_handle.to_server_tight == NULL) {
-    ESP_LOGE(TAG, "rec queue init fail, reboot...");
+    ESP_LOGE(TAG, "create rec queue fail, reboot...");
     esp_restart();
   }
 
@@ -317,16 +320,16 @@ void ble_ut_init() {
       .task_stack_size = configMINIMAL_STACK_SIZE * 2,
       .task_core_id = 0,
       .task_name = "ble ut loop task",
-      .task_priority = 10,
+      .task_priority = 12,
   };
   ESP_ERROR_CHECK(
       esp_event_loop_create(&event_loop_args, &ble_ut_event_loop_handle));
 
   xTaskCreate(ble_ut_to_client_task, "ble ut tx task",
-              configMINIMAL_STACK_SIZE * 2, NULL, 5,
+              configMINIMAL_STACK_SIZE * 2, NULL, 8,
               &ble_ut_task_handle.to_client);
   xTaskCreate(ble_ut_to_server_handler_task, "ble ut to server handler task",
-              configMINIMAL_STACK_SIZE * 2, NULL, 5,
+              configMINIMAL_STACK_SIZE * 2, NULL, 8,
               &ble_ut_task_handle.to_server_handler);
 }
 
@@ -336,9 +339,13 @@ void ble_ut_set_to_server_handler(BleUtToServerHandler_t cb) {
   }
 }
 
-// void ble_ut_deinit() {
-//   vTaskDelete(ble_ut_task_handle.to_client);
-//   vTaskDelete(ble_ut_task_handle.to_server);
-//   vTaskDelete(ble_ut_task_handle.to_server_handler);
-//   vTaskDelete(ble_ut_task_handle.to_client_test);
-// }
+void ble_ut_delete_to_server_handler() { to_server_handler = NULL; }
+
+void ble_ut_deinit() {
+  esp_ble_gatts_app_unregister(ble_ut_gatt_if);
+
+  vTaskDelete(ble_ut_task_handle.to_client);
+  vTaskDelete(ble_ut_task_handle.to_server_handler);
+  vQueueDelete(ble_ut_queue_handle.to_client_tight);
+  vQueueDelete(ble_ut_queue_handle.to_server_tight);
+}

@@ -2,8 +2,6 @@
 //
 #include "ble_common.h"
 //
-#include "my_event_group.h"
-//
 #include "esp_bt.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_device.h"
@@ -157,6 +155,8 @@ void my_bt_register_gatt_app_cb(esp_gatts_cb_t cb) {
     gatt_app_cb = cb;
 }
 
+void my_bt_unregister_gatt_app_cb() { gatt_app_cb = NULL; }
+
 void bt_gatts_init() {
   // register gap event handler
   ESP_ERROR_CHECK(esp_ble_gap_register_callback(my_gap_event_handler));
@@ -172,7 +172,7 @@ void bt_base_init_with_random_address(void *random_addr) {
       .task_stack_size = configMINIMAL_STACK_SIZE,
       .task_core_id = 0,
       .task_name = "my bt event loop",
-      .task_priority = 8,
+      .task_priority = 12,
   };
   ESP_ERROR_CHECK(
       esp_event_loop_create(&event_loop_args, &my_bt_event_loop_handle));
@@ -199,7 +199,7 @@ void my_bt_base_deinit() {
   ESP_ERROR_CHECK(esp_bt_controller_disable());
   ESP_ERROR_CHECK(esp_bt_controller_deinit());
 
-  ESP_ERROR_CHECK(esp_event_loop_delete(&my_bt_event_loop_handle));
+  ESP_ERROR_CHECK(esp_event_loop_delete(my_bt_event_loop_handle));
 }
 
 // 全部完成后，再测试

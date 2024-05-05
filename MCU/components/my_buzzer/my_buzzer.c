@@ -1,14 +1,10 @@
 #include "my_buzzer.h"
-
-#include "my_event_group.h"
-
+//
 #include "driver/ledc.h"
-
+//
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "freertos/semphr.h"
 #include "freertos/task.h"
-#include "freertos/timers.h"
 
 static QueueHandle_t my_buzzer_queue_handle = NULL;
 static TaskHandle_t my_buzzer_server_handle = NULL;

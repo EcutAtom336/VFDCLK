@@ -1,22 +1,23 @@
 #include "my_clock.h"
 //
 #include "VFD_8_MD_06INKM.h"
-#include "common.h"
+#include "life_cycle_manage.h"
 #include "my_buzzer.h"
-#include "my_event_group.h"
+#include "my_common.h"
 #include "my_sntp.h"
 //
+#include "button_gpio.h"
 #include "cJSON.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_sntp.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
 #include "freertos/portable.h"
-#include "freertos/timers.h"
+#include "iot_button.h"
 #include "nvs_flash.h"
 //
 #include <stdint.h>
+#include <string.h>
+#include <sys/time.h>
 //
 #define TAG "my clock"
 
@@ -37,9 +38,6 @@
 #define JSON_KEY_MY_CLOCK_OFF_SCREEN_DMIN "offSCRNDmin"
 #define JSON_KEY_MY_CLOCK_HOURLY_CHIME "hourPrompt"
 
-static TaskHandle_t my_clock_task_handle;
-static QueueHandle_t my_clock_queue_handle;
-
 typedef struct {
   uint32_t hour_prompt : 1;
   struct {
@@ -47,6 +45,31 @@ typedef struct {
     uint16_t off_Dmin;
   } timing_switch_screen;
 } MyClockConfig_t;
+
+typedef enum {
+  kMyClockMainMsgTypePause,
+  kMyClockMainMsgTypeResume,
+  kMyClockMainMsgTypeDelete,
+  kMyClockMainMsgTypeShow,
+  kMyClockMainMsgTypeHourPrompt,
+} MyClockMainMsgType_t;
+
+typedef struct {
+  MyClockMainMsgType_t type;
+  union {
+    struct {
+      char str[8];
+    } show;
+  };
+} MyClockMainMsg_t;
+
+typedef struct {
+  MyClockConfig_t config; //
+  TaskHandle_t main_task_handle;
+  QueueHandle_t main_queue_handle;
+  TaskHandle_t clk_task_handle;
+  button_handle_t iot_button_handle;
+} MyClockContext_t;
 
 void my_clock_get_config(MyClockConfig_t *p_config);
 
@@ -62,10 +85,7 @@ static inline bool check_u32_in_range(uint32_t start, uint32_t end,
   assert(start != end);
   assert(start <= max);
   assert(end <= max);
-  if (start < end)
-    return val >= start && val < end;
-  else
-    return !(val >= end && val < start);
+  return start < end ? val >= start && val < end : !(val >= end && val < start);
 }
 
 static inline uint32_t my_clock_get_gap(uint32_t from, uint32_t to,
@@ -73,86 +93,107 @@ static inline uint32_t my_clock_get_gap(uint32_t from, uint32_t to,
   return from <= to ? to - from : max - from + to;
 }
 
-static void my_clock_task() {
-  MyClockConfig_t config;
-  my_clock_get_config(&config);
-
-  VFD_8_MD_06INKM_show_str("VFD CLK ", 0, 8);
-  if (!(xEventGroupWaitBits(
-            event_group_manager_get_handle(kEventGroupManagerTimeIsSync),
-            EVENT_GROUP1_TIME_IS_SYNC, pdFALSE, pdFALSE, pdMS_TO_TICKS(10000)) &
-        EVENT_GROUP1_TIME_IS_SYNC))
-    VFD_8_MD_06INKM_show_str("        ", 0, 8);
-  xEventGroupWaitBits(
-      event_group_manager_get_handle(kEventGroupManagerTimeIsSync),
-      EVENT_GROUP1_TIME_IS_SYNC, pdFALSE, pdFALSE, portMAX_DELAY);
+void my_clock_clk_task(void *param) {
+  MyClockContext_t *context_handle = (MyClockContext_t *)param;
 
   struct timeval tv;
   struct tm *p_tm;
   uint32_t delay_ms = 1000;
-  bool time_blink = false;
-  time_t last_sync_sec;
-  uint8_t time_str[8];
+
+  uint32_t notify_val = 0;
+  TickType_t wait_notify_tick = portMAX_DELAY;
+
+  MyClockMainMsg_t main_msg;
+
   while (true) {
+    if (xTaskNotifyWaitIndexed(1, 0, 0xffffffff, &notify_val,
+                               wait_notify_tick) == pdTRUE) {
+      /*
+       *| ... | bit2       | bit1      | bit0     |
+       *| ... | on destroy | on resume | on pause |
+       */
+      if (notify_val & ((uint32_t)1) << 0) {
+        wait_notify_tick = portMAX_DELAY;
+      }
+      if (notify_val & ((uint32_t)1) << 1) {
+        wait_notify_tick = 0;
+      }
+      if (notify_val & ((uint32_t)1) << 2) {
+        vTaskDelete(NULL);
+      }
+      continue;
+    }
+
     gettimeofday(&tv, NULL);
     p_tm = localtime(&tv.tv_sec);
 
-    if (xQueueReceive(my_clock_queue_handle, &last_sync_sec, 0) == pdTRUE) {
-      if (tv.tv_sec - last_sync_sec >= DAY_SEC) {
-        delay_ms = 500;
-        time_blink = true;
-      } else {
-        delay_ms = 1000;
-        time_blink = false;
-      }
-    }
-
     // 定时开关
-    if (config.timing_switch_screen.on_Dmin !=
-            config.timing_switch_screen.off_Dmin &&
-        check_u32_in_range(config.timing_switch_screen.off_Dmin * 60,
-                           config.timing_switch_screen.on_Dmin * 60, DAY_SEC,
-                           p_tm->tm_hour * 3600 + p_tm->tm_min * 60 +
-                               p_tm->tm_sec)) {
-      VFD_8_MD_06INKM_show_str("        ", 0, 8);
+    if (context_handle->config.timing_switch_screen.on_Dmin !=
+            context_handle->config.timing_switch_screen.off_Dmin &&
+        check_u32_in_range(
+            context_handle->config.timing_switch_screen.off_Dmin * 60,
+            context_handle->config.timing_switch_screen.on_Dmin * 60, DAY_SEC,
+            p_tm->tm_hour * 3600 + p_tm->tm_min * 60 + p_tm->tm_sec)) {
+      ESP_LOGI(TAG, "open clock after %lu s",
+               my_clock_get_gap(
+                   p_tm->tm_hour * 3600 + p_tm->tm_min * 60 + p_tm->tm_sec,
+                   context_handle->config.timing_switch_screen.on_Dmin * 60,
+                   DAY_SEC));
+      main_msg.type = kMyClockMainMsgTypeShow;
+      memcpy(main_msg.show.str, "        ", 8);
+      xQueueSend(context_handle->main_queue_handle, &main_msg, portMAX_DELAY);
       vTaskDelay(pdMS_TO_TICKS(
-          my_clock_get_gap(p_tm->tm_hour * 3600 + p_tm->tm_min * 60 +
-                               p_tm->tm_sec,
-                           config.timing_switch_screen.on_Dmin * 60, DAY_SEC) *
+          my_clock_get_gap(
+              p_tm->tm_hour * 3600 + p_tm->tm_min * 60 + p_tm->tm_sec,
+              context_handle->config.timing_switch_screen.on_Dmin * 60,
+              DAY_SEC) *
           1000));
       continue;
     }
 
     // 整点提示
-    if (tv.tv_sec % 3600 == 0 && config.hour_prompt != 0)
-      my_buzzer_custom_tone(4000, 1000, 20);
-
-    if (time_blink) {
-      if (tv.tv_usec % 1000000 > 500000) {
-        strftime((char *)time_str, 9, "%H:%M:%S", localtime(&tv.tv_sec));
-      } else {
-        strftime((char *)time_str, 9, "%H %M %S", localtime(&tv.tv_sec));
-      }
-    } else {
-      strftime((char *)time_str, 9, "%H:%M:%S", localtime(&tv.tv_sec));
+    if (tv.tv_sec % 3600 == 0 && context_handle->config.hour_prompt != 0) {
+      main_msg.type = kMyClockMainMsgTypeHourPrompt;
+      xQueueSend(context_handle->main_queue_handle, &main_msg, portMAX_DELAY);
     }
-    VFD_8_MD_06INKM_show_str(time_str, 0, 8);
+
+    main_msg.type = kMyClockMainMsgTypeShow;
+    if (tv.tv_sec - my_sntp_get_last_sync_time() > DAY_SEC) {
+      delay_ms = 500;
+      strftime((char *)main_msg.show.str, 9,
+               tv.tv_usec % 1000000 > 500000 ? "%H:%M:%S" : "%H %M %S",
+               localtime(&tv.tv_sec));
+    } else {
+      delay_ms = 1000;
+      strftime((char *)main_msg.show.str, 9, "%H:%M:%S", localtime(&tv.tv_sec));
+    }
+
+    xQueueSend(context_handle->main_queue_handle, &main_msg, portMAX_DELAY);
 
     vTaskDelay(pdMS_TO_TICKS(delay_ms));
   }
 }
 
-void my_clock_sync_time_handler(void *event_handler_arg,
-                                esp_event_base_t event_base, int32_t event_id,
-                                void *event_data) {
-  if (event_base != MY_SNTP_EVENT) {
-    return;
-  }
+void my_clock_main_task(void *param) {
+  MyClockContext_t *context = (MyClockContext_t *)param;
 
-  xQueueOverwrite(my_clock_queue_handle, event_data);
-  // if (event_id == kMySntpSyncSuccess) {
-  // } else if (event_id == kMySntpSyncFail) {
-  // }
+  MyClockMainMsg_t main_msg;
+
+  while (true) {
+    xQueueReceive(context->main_queue_handle, &main_msg, portMAX_DELAY);
+    if (main_msg.type == kMyClockMainMsgTypePause) {
+      VFD_8_MD_06INKM_release();
+    } else if (main_msg.type == kMyClockMainMsgTypeResume) {
+      VFD_8_MD_06INKM_aquire(portMAX_DELAY);
+    } else if (main_msg.type == kMyClockMainMsgTypeDelete) {
+      context->main_task_handle = NULL;
+      vTaskDelete(NULL);
+    } else if (main_msg.type == kMyClockMainMsgTypeShow) {
+      VFD_8_MD_06INKM_show_str(main_msg.show.str, 0, 8);
+    } else if (main_msg.type == kMyClockMainMsgTypeHourPrompt) {
+      my_buzzer_custom_tone(4000, 1000, 10);
+    }
+  }
 }
 
 void my_clock_save_config(const MyClockConfig_t *p_config) {
@@ -196,22 +237,22 @@ void my_clock_get_config(MyClockConfig_t *p_config) {
       .hour_prompt = 0,
   };
   nvs_handle_t nvs_ro_handle;
-  esp_err_t ret;
-  ret = nvs_open_from_partition(NVS_VFDCLK_PARTITION_NAME, NVS_MY_CLOCK_NS,
-                                NVS_READONLY, &nvs_ro_handle);
-  if (ret != ESP_OK) {
+  esp_err_t esp_err;
+  esp_err = nvs_open_from_partition(NVS_VFDCLK_PARTITION_NAME, NVS_MY_CLOCK_NS,
+                                    NVS_READONLY, &nvs_ro_handle);
+  if (esp_err != ESP_OK) {
     ESP_LOGW(TAG, "get config open nvs fail, use default config, reason: %s",
-             esp_err_to_name(ret));
+             esp_err_to_name(esp_err));
     memcpy(p_config, &default_config, sizeof(MyClockConfig_t));
     return;
   }
 
   size_t my_clock_config_size = sizeof(MyClockConfig_t);
-  ret = nvs_get_blob(nvs_ro_handle, NVS_KEY_MY_CLOCK_CONFIG, p_config,
-                     &my_clock_config_size);
-  if (ret != ESP_OK) {
+  esp_err = nvs_get_blob(nvs_ro_handle, NVS_KEY_MY_CLOCK_CONFIG, p_config,
+                         &my_clock_config_size);
+  if (esp_err != ESP_OK) {
     ESP_LOGW(TAG, "get config read fail, use default config,reason: %s",
-             esp_err_to_name(ret));
+             esp_err_to_name(esp_err));
     nvs_close(nvs_ro_handle);
     memcpy(p_config, &default_config, sizeof(MyClockConfig_t));
     return;
@@ -270,20 +311,154 @@ void my_clock_analysis_config_json(cJSON *config_json_parent) {
   my_clock_save_config(&config);
 }
 
-void my_clock_deinit() { vTaskDelete(my_clock_task_handle); }
+void start_setting_wrap(void *button_handle, void *usr_data) {
+  ESP_LOGI(TAG, "start setting");
+  life_cycle_manage_create(MySetting);
+}
 
-void my_clock_init() {
-  xTaskCreate(my_clock_task, "my clock task", configMINIMAL_STACK_SIZE * 2,
-              NULL, 8, &my_clock_task_handle);
-  if (my_clock_task_handle == NULL) {
+void my_clock_create_fail_clear(void *pv_context) {
+  if (pv_context == NULL) {
+    return;
   }
 
-  my_clock_queue_handle = xQueueCreate(1, sizeof(time_t));
-  if (my_clock_queue_handle == NULL) {
+  MyClockContext_t *context_handle = (MyClockContext_t *)pv_context;
+
+  if (context_handle->main_queue_handle != NULL) {
+    vQueueDelete(context_handle->main_queue_handle);
   }
 
-  esp_event_handler_register(MY_SNTP_EVENT, kMySntpSyncSuccess,
-                             my_clock_sync_time_handler, NULL);
-  esp_event_handler_register(MY_SNTP_EVENT, kMySntpSyncFail,
-                             my_clock_sync_time_handler, NULL);
+  if (context_handle->main_task_handle != NULL) {
+    vTaskDelete(context_handle->main_task_handle);
+  }
+
+  if (context_handle->clk_task_handle) {
+    vTaskDelete(context_handle->clk_task_handle);
+  }
+
+  if (context_handle->iot_button_handle != NULL) {
+    iot_button_delete(context_handle->iot_button_handle);
+  }
+
+  vPortFree(pv_context);
+}
+
+void *my_clock_on_create() {
+  MyClockContext_t *context_handle = pvPortMalloc(sizeof(MyClockContext_t));
+
+  ESP_LOGI(TAG, "on create");
+
+  if (context_handle == NULL) {
+    ESP_LOGW(TAG, "malloc fail");
+    my_clock_create_fail_clear(context_handle);
+    return NULL;
+  }
+
+  // context->clock_wakeup_timer_handle =
+  //     xTimerCreate(NULL, pdMS_TO_TICKS(1), pdFALSE, (void *)0, NULL);
+  // if (context->clock_wakeup_timer_handle == NULL) {
+  //   ESP_LOGW(TAG, "clock wakeup timer create fail");
+  //   return NULL;
+  // }
+
+  context_handle->main_queue_handle = xQueueCreate(4, sizeof(MyClockMainMsg_t));
+  if (context_handle->main_queue_handle == NULL) {
+    ESP_LOGW(TAG, "create main queue fail");
+    my_clock_create_fail_clear(context_handle);
+    return NULL;
+  }
+
+  xTaskCreate(my_clock_main_task, NULL, configMINIMAL_STACK_SIZE * 2,
+              context_handle, 16, &context_handle->main_task_handle);
+  if (context_handle->main_task_handle == NULL) {
+    ESP_LOGW(TAG, "create main task fail");
+    my_clock_create_fail_clear(context_handle);
+    return NULL;
+  }
+
+  xTaskCreate(my_clock_clk_task, NULL, configMINIMAL_STACK_SIZE * 2,
+              context_handle, 12, &context_handle->clk_task_handle);
+  if (context_handle->clk_task_handle == NULL) {
+    ESP_LOGW(TAG, "create clk task fail");
+    my_clock_create_fail_clear(context_handle);
+    return NULL;
+  }
+
+  button_config_t button_config = {
+      .type = BUTTON_TYPE_GPIO,
+      .gpio_button_config =
+          {
+              .gpio_num = 4,
+              .active_level = 1,
+          },
+  };
+  context_handle->iot_button_handle = iot_button_create(&button_config);
+  if (context_handle->iot_button_handle == NULL) {
+    ESP_LOGW(TAG, "create iot button fail");
+    my_clock_create_fail_clear(context_handle);
+    return NULL;
+  }
+
+  return context_handle;
+}
+
+void my_clock_on_resume(void *pv_context) {
+  MyClockContext_t *context_handle = (MyClockContext_t *)pv_context;
+
+  esp_err_t esp_err;
+
+  ESP_LOGI(TAG, "on resume");
+
+  my_clock_get_config(&context_handle->config);
+
+  esp_err =
+      iot_button_register_cb(context_handle->iot_button_handle,
+                             BUTTON_LONG_PRESS_START, start_setting_wrap, NULL);
+  ESP_ERROR_CHECK(esp_err);
+
+  MyClockMainMsg_t main_msg = {
+      .type = kMyClockMainMsgTypeResume,
+  };
+  xQueueSendToFront(context_handle->main_queue_handle, &main_msg,
+                    portMAX_DELAY);
+  xTaskNotifyIndexed(context_handle->clk_task_handle, 1, ((uint32_t)1) << 1,
+                     eSetBits);
+}
+
+void my_clock_on_pause(void *pv_context) {
+  MyClockContext_t *context_handle = (MyClockContext_t *)pv_context;
+
+  ESP_LOGI(TAG, "on pause");
+
+  ESP_ERROR_CHECK(iot_button_unregister_cb(context_handle->iot_button_handle,
+                                           BUTTON_LONG_PRESS_START));
+
+  xQueueReset(context_handle->main_queue_handle);
+  MyClockMainMsg_t main_msg = {
+      .type = kMyClockMainMsgTypePause,
+  };
+  xQueueSendToFront(context_handle->main_queue_handle, &main_msg,
+                    portMAX_DELAY);
+  xTaskNotifyIndexed(context_handle->clk_task_handle, 1, ((uint32_t)1) << 0,
+                     eSetBits);
+}
+
+void my_clock_on_destroy(void *pv_context) {
+  MyClockContext_t *context_handle = (MyClockContext_t *)pv_context;
+
+  ESP_LOGI(TAG, "on destroy");
+
+  esp_err_t esp_err;
+
+  esp_err = iot_button_delete(context_handle->iot_button_handle);
+  ESP_ERROR_CHECK(esp_err);
+
+  MyClockMainMsg_t main_msg = {
+      .type = kMyClockMainMsgTypeDelete,
+  };
+  xQueueSendToFront(context_handle->main_queue_handle, &main_msg,
+                    portMAX_DELAY);
+  xTaskNotifyIndexed(context_handle->clk_task_handle, 1, ((uint32_t)1) << 2,
+                     eSetBits);
+
+  vPortFree(pv_context);
 }

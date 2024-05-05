@@ -1,6 +1,5 @@
 #ifndef _BLE_COMMON_H_
 #define _BLE_COMMON_H_
-
 //
 #include <stdint.h>
 #include <stdbool.h>

@@ -6,16 +6,16 @@ INCLUDE_DIRS
 "."
 PRIV_REQUIRES
 VFD_8_MD_06INKM
-my_event_group
 my_buzzer
-my_setting
 my_sntp
-common
+my_common
+life_cycle_manage
 
 esp_event
 nvs_flash
-json
+espressif__button
 
 
 REQUIRES
+json
 )

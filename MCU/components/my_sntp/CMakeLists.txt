@@ -5,7 +5,11 @@ SRCS
 INCLUDE_DIRS
 "."
 PRIV_REQUIRES
+esp_event
+
 esp_netif
-my_event_group
+
+
 REQUIRES
+
 )

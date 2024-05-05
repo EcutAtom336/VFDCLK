@@ -1,19 +1,13 @@
 #include "my_sntp.h"
 //
-#include "my_event_group.h"
-//
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif_sntp.h"
 #include "esp_sntp.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
 //
 #include "time.h"
 
 #define TAG "my sntp"
-
-ESP_EVENT_DEFINE_BASE(MY_SNTP_EVENT);
 
 time_t last_sync_sec;
 
@@ -30,15 +24,9 @@ void my_sntp_sync_cb(struct timeval *tv) {
   if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) {
     ESP_LOGI(TAG, "sync time success.");
     last_sync_sec = tv->tv_sec;
-    esp_event_post(MY_SNTP_EVENT, kMySntpSyncSuccess, &last_sync_sec,
-                   sizeof(time_t), portMAX_DELAY);
-    event_group_manager_set_bits(kEventGroupManagerTimeIsSync,
-                                 kMyEventGroupSet);
     my_sntp_set_sync_time_interval(3600000);
   } else if (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET) {
     ESP_LOGI(TAG, "sync time fail.");
-    esp_event_post(MY_SNTP_EVENT, kMySntpSyncFail, &last_sync_sec,
-                   sizeof(time_t), portMAX_DELAY);
     my_sntp_set_sync_time_interval(15000);
   } else if (sntp_get_sync_status() == SNTP_SYNC_STATUS_IN_PROGRESS) {
   }
@@ -58,7 +46,10 @@ void my_sntp_stop(void *event_handler_arg, esp_event_base_t event_base,
   ESP_LOGI(TAG, "sntp is stop.");
 }
 
+time_t my_sntp_get_last_sync_time() { return last_sync_sec; }
+
 void my_sntp_init() {
+
   esp_sntp_config_t my_sntp_config = ESP_NETIF_SNTP_DEFAULT_CONFIG_MULTIPLE(
       4, ESP_SNTP_SERVER_LIST("ntp6.aliyun.com", "ntp2.tencent.com",
                               "ntp.ntsc.ac.cn", "cn.ntp.org.cn"));

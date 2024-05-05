@@ -5,7 +5,7 @@ SRCS
 INCLUDE_DIRS
 "."
 PRIV_REQUIRES
-common
+my_common
 
 driver
 nvs_flash

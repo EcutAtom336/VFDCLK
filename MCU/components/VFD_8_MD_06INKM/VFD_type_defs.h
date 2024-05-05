@@ -6,9 +6,9 @@ typedef enum {
   kVfdEnable = 1,
 } VfdState_t;
 
-// typedef enum {
-//   kVfdSuccess = 0,
-//   kVfdFail = 1,
-// } VfdRet_t;
+typedef enum {
+  kVfdSuccess = 0,
+  kVfdFail = 1,
+} VfdErr_t;
 
 #endif
